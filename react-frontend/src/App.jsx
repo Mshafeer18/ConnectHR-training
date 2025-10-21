@@ -14,7 +14,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         {/* Public */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login />} />
 
         {/* Protected routes wrapped by PrivateRoute and Layout (header + footer) */}
         <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
