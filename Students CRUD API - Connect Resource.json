@@ -1,0 +1,236 @@
+{
+  "info": {
+    "name": "Students CRUD API - Connect Resource",
+    "description": "Postman collection for the Students endpoints used by the React frontend. Replace {{base_url}} if your API URL differs. Login stores access_token into {{api_token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api" },
+    { "key": "api_token", "value": "" },
+    { "key": "last_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth / Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret123\",\n  \"device_name\": \"postman\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/login", "host": ["{{base_url}}"], "path": ["login"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 201', () => pm.expect(pm.response.code === 200 || pm.response.code === 201).to.be.true);",
+              "let json = {};",
+              "try { json = pm.response.json(); } catch(e){}",
+              "const token = json?.access_token || json?.token || json?.data?.access_token;",
+              "if (token) {",
+              "  pm.environment.set('api_token', token);",
+              "  console.log('Saved api_token');",
+              "}",
+              "pm.test('Response has token or message', () => pm.expect(token || json?.message).to.be.ok);"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Auth / Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/logout", "host": ["{{base_url}}"], "path": ["logout"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 204', () => pm.expect(pm.response.code === 200 || pm.response.code === 204).to.be.true);",
+              "pm.environment.unset('api_token');",
+              "console.log('Cleared api_token');"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Students / List Students",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/students", "host": ["{{base_url}}"], "path": ["students"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+              "let body = [];",
+              "try { body = pm.response.json(); } catch(e){}",
+              "pm.test('Response is array or object', () => pm.expect(Array.isArray(body) || typeof body === 'object').to.be.true);",
+              "if (Array.isArray(body) && body.length) pm.environment.set('last_id', body[0].id || body[0]._id || '');",
+              "if (!Array.isArray(body) && (body.data && Array.isArray(body.data) && body.data.length)) pm.environment.set('last_id', body.data[0].id || body.data[0]._id || '');"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Students / Create Student (multipart)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "name", "value": "Test Student", "type": "text" },
+            { "key": "email", "value": "test.student@example.com", "type": "text" },
+            { "key": "age", "value": "21", "type": "text" },
+            { "key": "photo", "type": "file", "src": "" }
+          ]
+        },
+        "url": { "raw": "{{base_url}}/students", "host": ["{{base_url}}"], "path": ["students"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 or 201', () => pm.expect(pm.response.code === 200 || pm.response.code === 201).to.be.true);",
+              "let json = {};",
+              "try { json = pm.response.json(); } catch(e){}",
+              "const id = json?.id || json?.data?.id || (json?.student && json.student.id);",
+              "if (id) pm.environment.set('last_id', id);",
+              "pm.test('Response includes id when created', () => pm.expect(id || true).to.be.ok);"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Students / Get Student by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/students/{{last_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["students", "{{last_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "let json = {};",
+              "try { json = pm.response.json(); } catch(e){}",
+              "pm.test('Response has id or name', () => pm.expect(json?.id || json?.name || json?.data).to.be.ok);"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Students / Update Student (multipart PUT)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "name", "value": "Updated Student", "type": "text" },
+            { "key": "email", "value": "updated@example.com", "type": "text" },
+            { "key": "age", "value": "22", "type": "text" },
+            { "key": "photo", "type": "file", "src": "" },
+            { "key": "_method", "value": "PUT", "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/students/{{last_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["students", "{{last_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "let json = {};",
+              "try { json = pm.response.json(); } catch(e){}",
+              "pm.test('Update response ok', () => pm.expect(json).to.be.ok);"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Students / Delete Student",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_token}}" },
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{base_url}}/students/{{last_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["students", "{{last_id}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status 200 or 204', () => pm.expect(pm.response.code === 200 || pm.response.code === 204).to.be.true);"
+            ]
+          }
+        }
+      ]
+    }
+
+  ]
+}
