@@ -67,7 +67,7 @@ api.interceptors.response.use(
       // token invalid/expired — clear and redirect to login
       setAuthToken(null);
       // immediate redirect (frontend already uses this behavior)
-      window.location.href = '/login';
+      window.location.href = '/react';
       // still return a rejected promise so callers can handle if needed
     }
 

@@ -11,7 +11,7 @@ import PrivateRoute from './components/PrivateRoute';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/react">
       <Routes>
         {/* Public */}
         <Route path="/" element={<Login />} />

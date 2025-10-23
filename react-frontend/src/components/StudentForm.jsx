@@ -166,7 +166,8 @@ const StudentForm = ({ student: propStudent = null, onClose }) => {
     try {
       if (student?.id || routeId) {
         const targetId = student?.id || routeId;
-        await postForm(`/students/${targetId}?_method=PUT`, formData);
+        formData.append('_method', 'PUT');
+        await postForm(`/students/${targetId}`, formData);
         // After edit, navigate to the student's detail page (route-based)
         if (typeof onClose === 'function') onClose();
         else navigate(`/students/${targetId}`, { replace: true });
