@@ -195,31 +195,57 @@ public function apiShow($id)
         ], 500);
     }
 }
-
-
-    // POST /api/students
+// POST /api/students
 public function apiStore(StoreStudentRequest $request)
 {
     DB::beginTransaction();
-    try {
-        $data = $request->only(['name','email','age']);
-        $student = Student::create($data);
 
+    try {
+        // 1️⃣ Collect input
+        $data = $request->only(['name', 'email', 'age']);
+
+        //$student = Student::create($data);
+        // 2️⃣ Call the MySQL stored procedure
+        $result = DB::select('CALL sp_create_student(?, ?, ?)', [
+            $data['name'],
+            $data['email'],
+            $data['age'] ?? null
+        ]);
+
+        // 3️⃣ Get the inserted student ID from SP
+        $studentId = $result[0]->student_id ?? null;
+
+        if (!$studentId) {
+            throw new \Exception('Failed to retrieve student ID from stored procedure');
+        }
+
+        // 4️⃣ Fetch the student model
+        $student = Student::find($studentId);
+
+        // 5️⃣ Handle photo upload
         if ($request->hasFile('photo')) {
             $student->addMediaFromRequest('photo')->toMediaCollection('photos');
         }
 
+        // 6️⃣ Dispatch the TestJob
         TestJob::dispatch($student);
 
         DB::commit();
 
+        // 7️⃣ Return API response
         return (new StudentResource($student))
             ->additional(['message' => 'Student created successfully'])
             ->response()
             ->setStatusCode(201);
+
     } catch (Throwable $e) {
         DB::rollBack();
-        Log::error('apiStore error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+
+        Log::error('apiStore error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+
         return response()->json([
             'message' => 'Failed to create student',
             'errors' => null,
@@ -227,6 +253,7 @@ public function apiStore(StoreStudentRequest $request)
         ], 500);
     }
 }
+
 
     // PUT /api/students/{student}
 public function apiUpdate(UpdateStudentRequest $request, $id)
@@ -242,7 +269,18 @@ public function apiUpdate(UpdateStudentRequest $request, $id)
     DB::beginTransaction();
     try {
         $data = $request->only(['name','email','age']);
-        $student->update($data);
+        
+        //$student->update($data);
+        // Call MySQL stored procedure to update student
+        DB::select('CALL sp_update_student(?, ?, ?, ?)', [
+            $student->id,
+            $data['name'],
+            $data['email'],
+            $data['age'] ?? null
+        ]);
+
+        // Fetch updated student
+        $student = Student::find($student->id);
 
         if ($request->filled('remove_photo')) {
             $student->clearMediaCollection('photos');
@@ -284,12 +322,26 @@ public function apiDestroy($id)
             'message' => 'Student not found',
         ], 404);
     }
-    try {
+    /*try {
         DB::beginTransaction();
         $student->clearMediaCollection('photos');
         $student->delete();
         DB::commit();
         return response()->json(['message' => 'Student deleted successfully'], 200);
+    }*/
+    DB::beginTransaction();
+    try {
+        // Remove photos first
+        $student->clearMediaCollection('photos');
+
+        // Call stored procedure to delete the student
+        DB::select('CALL sp_delete_student(?)', [$student->id]);
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Student deleted successfully'
+        ], 200);
     } catch (Throwable $e) {
         DB::rollBack();
         Log::error('apiDestroy error', ['id' => $student->id, 'error' => $e->getMessage()]);
