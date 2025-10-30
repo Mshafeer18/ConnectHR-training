@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use App\Models\Concerns\BelongsToTenant;
 
 class Student extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, BelongsToTenant;
 
-    protected $fillable = ['name', 'email', 'age'];
+    protected $fillable = ['name', 'email', 'age', 'tenant_id'];
 
     /**
      * Register media conversions (thumbnail example).

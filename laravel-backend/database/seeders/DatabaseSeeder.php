@@ -20,6 +20,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Seed the posts
-        $this->call(PostSeeder::class);
+        $this->call([TenantsTableSeeder::class,PostSeeder::class]);
     }
 }

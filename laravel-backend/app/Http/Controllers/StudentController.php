@@ -201,38 +201,42 @@ public function apiStore(StoreStudentRequest $request)
     DB::beginTransaction();
 
     try {
-        // 1️⃣ Collect input
+        // Collect input
         $data = $request->only(['name', 'email', 'age']);
 
+        //  tenant
+        $tenant = app('currentTenant') ?? null;
+
         //$student = Student::create($data);
-        // 2️⃣ Call the MySQL stored procedure
-        $result = DB::select('CALL sp_create_student(?, ?, ?)', [
+        // Call the MySQL stored procedure
+        $result = DB::select('CALL sp_create_student(?, ?, ?, ?)', [
             $data['name'],
             $data['email'],
-            $data['age'] ?? null
+            $data['age'] ?? null,
+            $tenant?->id
         ]);
 
-        // 3️⃣ Get the inserted student ID from SP
+        // Get the inserted student ID from SP
         $studentId = $result[0]->student_id ?? null;
 
         if (!$studentId) {
             throw new \Exception('Failed to retrieve student ID from stored procedure');
         }
 
-        // 4️⃣ Fetch the student model
+        // Fetch the student model
         $student = Student::find($studentId);
 
-        // 5️⃣ Handle photo upload
+        // Handle photo upload
         if ($request->hasFile('photo')) {
             $student->addMediaFromRequest('photo')->toMediaCollection('photos');
         }
 
-        // 6️⃣ Dispatch the TestJob
+        // Dispatch the TestJob
         TestJob::dispatch($student);
 
         DB::commit();
 
-        // 7️⃣ Return API response
+        // Return API response
         return (new StudentResource($student))
             ->additional(['message' => 'Student created successfully'])
             ->response()

@@ -19,7 +19,19 @@ class AuthController extends Controller
     {
         $data = $request->validated();
 
-        $user = User::where('email', $data['email'])->first();
+        //$user = User::where('email', $data['email'])->first();
+
+        $tenant = app('currentTenant') ?? null;
+
+        if (! $tenant) {
+            return response()->json(['message' => 'Tenant context missing'], 400);
+        }
+
+        // find user constrained by tenant_id
+        $user = User::where('email', $data['email'])
+                ->where('tenant_id', $tenant->id)
+                ->first();
+
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             // consistent 401 response for bad credentials

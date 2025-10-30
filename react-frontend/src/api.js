@@ -23,6 +23,21 @@ export function setAuthToken(token) {
 const _token = localStorage.getItem('api_token');
 if (_token) setAuthToken(_token);
 
+// set/unset tenant header (call from UI on login / tenant selection)
+export function setTenantSlug(slug) {
+  if (slug) {
+    localStorage.setItem('tenant_slug', slug);
+    api.defaults.headers.common['X-Tenant-Slug'] = slug;
+  } else {
+    localStorage.removeItem('tenant_slug');
+    delete api.defaults.headers.common['X-Tenant-Slug'];
+  }
+}
+
+// initialize tenant header on app start
+const _tenant = localStorage.getItem('tenant_slug');
+if (_tenant) setTenantSlug(_tenant);
+
 /**
  * Normalize axios error into: { status, message, errors, raw }
  */

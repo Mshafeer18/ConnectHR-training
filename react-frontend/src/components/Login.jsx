@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api, { setAuthToken } from '../api';
+import api, { setAuthToken, setTenantSlug } from '../api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,6 +21,7 @@ export default function Login() {
 
     setLoading(true);
     try {
+      setTenantSlug('tenant-a'); // <-- change to 'tenant-b' when testing other tenant
       const res = await api.post('/login', {
         email,
         password,

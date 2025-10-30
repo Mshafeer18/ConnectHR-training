@@ -6,10 +6,10 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\StudentController;
 
 // public: obtain token
-Route::post('login', [AuthController::class, 'login']);
+Route::post('login', [AuthController::class, 'login'])->middleware('tenant');
 
 // Protect everything below with token auth
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['tenant', 'auth:sanctum'])->group(function () {
 
     // revoke token / logout
     Route::post('logout', [AuthController::class, 'logout']);
